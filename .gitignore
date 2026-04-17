@@ -1,0 +1,29 @@
+# Monorepo root — bổ sung cho cả hai app (chi tiết thêm trong từng thư mục con)
+
+# Secrets & local env
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/.dev.vars
+!**/.dev.vars.example
+
+# Dependencies & build
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.wrangler/
+**/.wrangler/
+
+# Logs & OS
+*.log
+.DS_Store
+
+# IDE
+.idea/
+*.swp
