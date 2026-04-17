@@ -83,3 +83,13 @@ Sau khi đổi URL Worker: cập nhật lại `VITE_API_BASE` trên Pages và **
 - **Preview PR**: bật trên Pages; đặt `VITE_API_BASE` preview trỏ Worker preview nếu có pipeline riêng.
 
 NestJS trong `moi-thue---real-estate-platform/server/` không nằm trong flow Cloudflare mặc định; production SPA gọi trực tiếp Worker qua `VITE_API_BASE`.
+
+## 6. Sự cố: `error occurred while updating repository submodules` (Pages / clone)
+
+Xảy ra khi Git lưu thư mục dạng **submodule** (mode `160000`, gitlink) nhưng **không có** `.gitmodules`, hoặc trong thư mục con vẫn còn `.git` riêng (repo lồng repo). Cloudflare chạy `submodule update` và thất bại.
+
+**Cách xử lý (một repo monorepo thật sự):**
+
+1. Xóa `.git` bên trong `moi-thue---real-estate-platform/` và `moithue-base/` (nếu có).
+2. Ở repo gốc: `git rm --cached moi-thue---real-estate-platform moithue-base` rồi `git add moi-thue---real-estate-platform/ moithue-base/` để index là file thường (blob), không còn gitlink.
+3. Commit và push lại — build Pages sẽ clone bình thường.
