@@ -43,6 +43,7 @@ npm install
 | `npm run generate:seed` | Sinh `src/db/migrations/seed.sql` (PBKDF2; cần Web Crypto — Node có `globalThis.crypto`). |
 | `npm run db:seed:local` | Chạy `seed.sql` lên **D1 local** (`wrangler dev` đọc DB này). |
 | `npm run db:seed:preview` | Chạy `seed.sql` lên **D1 preview remote** (`--remote --preview`) — **không** phải DB local của dev. |
+| `npm run db:seed:remote` | Chạy `seed.sql` lên **D1 production remote** (`--remote`) — **xóa** dữ liệu demo cũ rồi nạp lại; chỉ khi bạn chấp nhận ghi đè. |
 
 ---
 
@@ -91,11 +92,28 @@ npx wrangler dev --remote
 
 ## 4. Drizzle Kit (`.env.local`)
 
+Sao chép [`.env.local.example`](../.env.local.example) → `.env.local` và điền giá trị.
+
 `drizzle.config.ts` đọc `.env.local`:
 
-- `ENVIRONMENT`: chỉ đặt `production` khi cần DB production; **bỏ trống hoặc bất kỳ giá trị khác** → Drizzle dùng **preview** (`CLOUDFLARE_DATABASE_ID_PREVIEW` + thư mục `migrations/preview`).
+- `ENVIRONMENT`: chỉ đặt **`production`** (đúng chữ, không phân biệt hoa thường) khi cần **D1 production**; **bỏ hoặc giá trị khác** → Drizzle dùng **preview** (`CLOUDFLARE_DATABASE_ID_PREVIEW` + thư mục `migrations/preview`).
 - `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_DATABASE_ID_PREVIEW` hoặc `CLOUDFLARE_DATABASE_ID_PRODUCTION`
+- `CLOUDFLARE_DATABASE_ID_PREVIEW` **hoặc** (khi production) `CLOUDFLARE_DATABASE_ID_PRODUCTION`
+
+### 4.1 Drizzle Studio — **remote preview** vs **remote production**
+
+| Mục tiêu | Lệnh | Điều kiện `.env.local` |
+|---------|------|-------------------------|
+| Xem / migrate **preview** (D1 trên Cloudflare, branch preview Worker) | `npm run db:studio` | **Không** đặt `ENVIRONMENT=production`. Có `CLOUDFLARE_DATABASE_ID_PREVIEW` = UUID preview (trùng `preview_database_id` trong `wrangler.json`). |
+| Xem / migrate **production** | `npm run db:studio` | **`ENVIRONMENT=production`** + `CLOUDFLARE_DATABASE_ID_PRODUCTION` = UUID **production** (trùng `database_id` trong `wrangler.json`, **không** nhầm với preview). |
+| Chỉ SQLite **local** (`wrangler dev`) | `npm run db:studio:local` | **Không** kết nối remote — nếu bạn đang chạy lệnh này thì sẽ **không bao giờ** thấy DB prod. |
+
+**Lỗi thường gặp khi “không xem được DB prod”:**
+
+1. Đang dùng `db:studio:local` thay vì `db:studio`.
+2. Thiếu `ENVIRONMENT=production` nên Drizzle vẫn trỏ **preview**.
+3. `CLOUDFLARE_DATABASE_ID_PRODUCTION` sai UUID hoặc trùng với preview.
+4. `CLOUDFLARE_API_TOKEN` hết hạn / thiếu quyền đọc D1.
 
 Chi tiết thư mục migration preview/production: xem [06-migration-seed-va-drizzle-kit.md](./06-migration-seed-va-drizzle-kit.md). **Local vs remote, seed/migrate tách bạch:** [08-d1-local-remote-migration-va-seed.md](./08-d1-local-remote-migration-va-seed.md).
 
@@ -105,12 +123,14 @@ Chi tiết thư mục migration preview/production: xem [06-migration-seed-va-dr
 
 1. Tạo / liên kết database D1 trên Cloudflare, cập nhật `database_id` trong Wrangler.
 2. Apply migration (Wrangler hoặc Drizzle Kit — chọn **một** luồng bạn tin dùng).
-3. (Tuỳ chọn) `npm run generate:seed` rồi chạy `seed.sql` lên **đúng** môi trường: dev cục bộ → `npm run db:seed:local`; preview trên Cloudflare → `npm run db:seed:preview` (xem doc 08).
+3. (Tuỳ chọn) `npm run generate:seed` rồi chạy `seed.sql` lên **đúng** môi trường: dev cục bộ → `npm run db:seed:local`; preview → `npm run db:seed:preview`; **production** → `npm run db:seed:remote` (xem doc 08 và [09-d1-production-parity.md](./09-d1-production-parity.md)).
 
-**Tài khoản demo** sau khi chạy seed (mật khẩu xem output của `generate:seed` trên console):
+**Tài khoản demo** sau khi seed đã chạy thành công trên **đúng** DB mà Worker đang dùng (local / preview / prod):
 
-- `alice.admin@example.com` / `Admin1234` (admin)
-- `bob.user@example.com` / `User1234` (user)
+- `alice.admin@example.com` / **`Admin1234`** (admin)
+- `bob.user@example.com` / **`User1234`** (user)
+
+Nếu đăng nhập báo lỗi: kiểm tra SPA gọi đúng `VITE_API_BASE` (Worker prod), Worker prod có **`JWT_SECRET`** (Dashboard Secret), **`ALLOW_ORIGIN`** trùng origin SPA, và bảng `users` trên **cùng** D1 đó đã có 2 user seed (chưa seed → không đăng nhập được).
 
 ---
 
@@ -212,6 +232,7 @@ npm run check   # TypeScript + sinh seed.sql
 | Vitest: phải đăng nhập Wrangler / remote proxy | Tránh `remote: true` trên D1 khi chạy test; hoặc `wrangler login`. |
 | `Failed query` / không có bảng | Apply migration lên D1 đúng môi trường; kiểm tra `migrations_dir`. |
 | JWT invalid | Kiểm tra `JWT_SECRET` thống nhất giữa dev/prod; thời gian hết hạn access token. |
+| **Đăng nhập / đăng ký trả 500** | Thường do **thiếu `JWT_SECRET`** trên Worker prod (sau khi bỏ khỏi `wrangler.json` vars) → cấu hình Secret. Hoặc DB: thiếu bảng `roles` / migration chưa apply → response JSON có `hint` (schema). Hoặc `Default role missing` → chưa có dòng `user` trong `roles` (chạy migration + seed). Xem response trong DevTools → Network. |
 | CORS chặn browser | Set `ALLOW_ORIGIN` đúng origin frontend hoặc dùng proxy dev. |
 
 ---

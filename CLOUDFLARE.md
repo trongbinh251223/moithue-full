@@ -88,6 +88,25 @@ SPA fallback: [`moi-thue---real-estate-platform/public/_redirects`](moi-thue---r
 
 Sau khi đổi URL Worker: cập nhật `VITE_API_BASE` trên Pages và **Redeploy** (biến `VITE_*` embed lúc build).
 
+### Deploy Pages từ máy local (Direct Upload — Wrangler)
+
+Không cần push Git: build SPA rồi đẩy thư mục `dist` lên Cloudflare Pages bằng [Wrangler](https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/).
+
+1. Trên Dashboard: tạo project **Pages** (Workers & Pages → Create → Pages) với **tên trùng** trường `name` trong [`moi-thue---real-estate-platform/wrangler.toml`](moi-thue---real-estate-platform/wrangler.toml) (mặc định `moithue-spa` — đổi một trong hai cho khớp).
+2. **Đăng nhập Wrangler** (một lần trên máy): `cd moi-thue---real-estate-platform && npx wrangler login`  
+   Hoặc dùng token: `export CLOUDFLARE_API_TOKEN=...` và `export CLOUDFLARE_ACCOUNT_ID=...` (quyền **Account → Cloudflare Pages → Edit**).
+3. **Biến build production** (`VITE_*` được nhúng lúc build): tạo file `.env.production` trong app Vite (không commit) hoặc export trước khi chạy, ví dụ:
+   ```bash
+   cd moi-thue---real-estate-platform
+   export VITE_API_BASE="https://<worker>.workers.dev/api/v1"
+   export VITE_SITE_URL="https://<project>.pages.dev"
+   npm run cf:pages:deploy
+   ```
+   Script [`cf:pages:deploy`](moi-thue---real-estate-platform/package.json): `npm run build:web && wrangler pages deploy dist` (đọc `wrangler.toml`).
+4. **Preview branch** (tuỳ chọn): `npx wrangler pages deploy dist --branch=preview`.
+
+**Node:** Wrangler 4 yêu cầu **Node ≥ 20.3** (xem cảnh báo khi `npm install` nếu máy dùng Node 18).
+
 ## 4. Kiểm tra (E2E thủ công)
 
 1. Mở URL Pages → Đăng ký / đăng nhập / tìm kiếm.

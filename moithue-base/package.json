@@ -36,7 +36,15 @@
     "db:preview:add-role-id": "wrangler d1 execute DB_PROD --remote --preview --file=./scripts/d1-preview-add-role-id.sql",
     "db:local:add-role-id": "wrangler d1 execute DB_PROD --local --file=./scripts/d1-preview-add-role-id.sql",
     "db:preview:add-password-hash": "wrangler d1 execute DB_PROD --remote --preview --file=./scripts/d1-preview-add-password-hash.sql",
-    "db:local:add-password-hash": "wrangler d1 execute DB_PROD --local --file=./scripts/d1-preview-add-password-hash.sql"
+    "db:local:add-password-hash": "wrangler d1 execute DB_PROD --local --file=./scripts/d1-preview-add-password-hash.sql",
+    "db:prod:add-password-hash": "wrangler d1 execute DB_PROD --remote --file=./scripts/d1-preview-add-password-hash.sql",
+    "db:prod:add-role-id": "wrangler d1 execute DB_PROD --remote --file=./scripts/d1-preview-add-role-id.sql",
+    "db:prod:roles-sessions": "wrangler d1 execute DB_PROD --remote --file=./scripts/d1-prod-roles-sessions.sql",
+    "db:prod:users-updated-at": "wrangler d1 execute DB_PROD --remote --file=./scripts/d1-prod-users-updated-at.sql",
+    "db:prod:users-backfill": "wrangler d1 execute DB_PROD --remote --file=./scripts/d1-prod-users-backfill.sql",
+    "db:seed:remote": "wrangler d1 execute DB_PROD --remote --file=./src/db/migrations/seed.sql",
+    "db:prod:parity": "bash ./scripts/d1-prod-parity.sh",
+    "deploy:prod": "npm run db:prod:parity && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.14.7",

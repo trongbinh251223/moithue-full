@@ -24,6 +24,11 @@ function schemaMismatchHint(full: string): string | undefined {
   return undefined;
 }
 
+function safeErrorsMode(safeErrors: string | undefined): boolean {
+  const v = safeErrors?.trim().toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
+}
+
 export const onErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
   const log = c.get('log');
   const requestId = c.get('requestId');
@@ -42,18 +47,28 @@ export const onErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
 
   const full = fullErrorText(err);
   const hint = schemaMismatchHint(full);
+  const topMsg = err instanceof Error ? err.message : String(err);
+  const safe = safeErrorsMode(c.env.SAFE_ERRORS);
+
   log.error('unhandled.error', {
-    message: err instanceof Error ? err.message : String(err),
-    detail: full !== (err instanceof Error ? err.message : String(err)) ? full : undefined,
+    message: topMsg,
+    detail: full !== topMsg ? full : undefined,
     stack: err instanceof Error ? err.stack : undefined,
   });
+
+  const publicMessage = safe
+    ? 'Internal server error'
+    : topMsg || 'Internal server error';
+  const publicDetail =
+    !safe && full !== topMsg && full.length > 0 ? full.slice(0, 2000) : undefined;
 
   return c.json(
     {
       error: {
         code: 'INTERNAL_ERROR',
-        message: 'Internal server error',
+        message: publicMessage,
         ...(hint ? { hint } : {}),
+        ...(publicDetail ? { detail: publicDetail } : {}),
       },
       requestId,
     },

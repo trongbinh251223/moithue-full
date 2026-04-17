@@ -27,6 +27,11 @@ export type Env = {
   /** If set, CORS allows only this origin (exact match). Otherwise `*`. */
   ALLOW_ORIGIN?: string;
   /**
+   * If `1` / `true` / `yes`, unhandled 500 responses omit `Error.message` / `detail`
+   * (only generic text + optional schema `hint`).
+   */
+  SAFE_ERRORS?: string;
+  /**
    * Optional SPA origin (no trailing slash), e.g. http://localhost:3000.
    * When set, `POST /auth/forgot-password` includes `resetUrl` in the JSON response
    * so you can test reset without email. Omit in production and send the link by email instead.

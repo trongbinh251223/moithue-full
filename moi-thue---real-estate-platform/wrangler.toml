@@ -1,0 +1,5 @@
+# Cloudflare Pages — direct upload từ máy: npx wrangler pages deploy
+# Đổi `name` cho trùng tên project Pages trên Dashboard (Workers & Pages → project của bạn).
+name = "moithue-spa"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-04-15"

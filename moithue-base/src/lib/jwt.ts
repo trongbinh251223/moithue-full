@@ -1,4 +1,5 @@
 import { SignJWT, jwtVerify } from 'jose';
+import { Errors } from './errors';
 import type { Env } from '../types/app';
 
 export type AccessTokenPayload = {
@@ -9,7 +10,13 @@ export type AccessTokenPayload = {
 };
 
 function getSecret(env: Env) {
-  return new TextEncoder().encode(env.JWT_SECRET);
+  const s = env.JWT_SECRET;
+  if (typeof s !== 'string' || !s.trim()) {
+    throw Errors.internal(
+      'JWT_SECRET is not set on this Worker. Production: Dashboard → Workers → Secrets, or `wrangler secret put JWT_SECRET`. Local: `.dev.vars` (see .dev.vars.example).',
+    );
+  }
+  return new TextEncoder().encode(s);
 }
 
 function issuer(env: Env) {

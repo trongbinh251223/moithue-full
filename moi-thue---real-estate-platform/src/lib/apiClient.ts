@@ -23,12 +23,17 @@ export class ApiError extends Error {
 
 function errMessage(status: number, body: unknown): string {
   if (body && typeof body === 'object' && 'error' in body) {
-    const err = (body as { error?: { message?: string } }).error;
-    if (err?.message) return err.message;
+    const err = (body as { error?: { message?: string; hint?: string; code?: string } }).error;
+    if (err?.message) {
+      const hint = err.hint ? ` ${err.hint}` : '';
+      const code = err.code && err.code !== 'INTERNAL_ERROR' ? ` [${err.code}]` : '';
+      return `${err.message}${hint}${code}`.trim();
+    }
   }
   if (status === 401) return 'Phiên đăng nhập không hợp lệ.';
   if (status === 403) return 'Bạn không có quyền thực hiện thao tác này.';
   if (status === 404) return 'Không tìm thấy dữ liệu.';
+  if (status === 500) return 'Lỗi máy chủ (500). Mở tab Network → response JSON để xem error.message / requestId.';
   return 'Đã có lỗi xảy ra.';
 }
 
