@@ -2,6 +2,8 @@
 
 Monorepo gồm API Worker [`moithue-base/`](moithue-base/) và SPA Vite [`moi-thue---real-estate-platform/`](moi-thue---real-estate-platform/).
 
+**Luồng khuyến nghị (Cách A):** Pages chỉ build & publish SPA; Worker + D1 deploy bằng [GitHub Actions](.github/workflows/deploy-moithue-base.yml). Không bật Deploy command Wrangler trên Pages; có thể tắt **Worker Builds** (Git trên Worker) nếu không dùng để tránh lỗi build token trùng pipeline.
+
 ## 1. GitHub
 
 1. Tạo repository mới (rỗng, không README nếu bạn sẽ push sẵn có).
@@ -56,19 +58,35 @@ Mỗi push lên `main` có thay đổi trong `moithue-base/` sẽ: `npm ci` → 
 
 ## 3. Cloudflare Pages (SPA)
 
-1. **Workers & Pages → Create → Pages → Connect to Git** — chọn repo vừa tạo.
-2. Cấu hình build:
+1. **Workers & Pages → Create → Pages → Connect to Git** — chọn repo.
+
+2. **Cách A (mặc định — khuyến nghị)** — Pages chỉ đóng gói SPA; API do GitHub Actions deploy (mục §2).
+
+   **Build configuration:**
+
    - **Root directory**: `moi-thue---real-estate-platform`
    - **Build command**: `npm ci && npm run build:web`
    - **Build output directory**: `dist`
-3. **Environment variables** (Production / Preview):
-   - `VITE_API_BASE` = `https://<worker-subdomain>.workers.dev/api/v1` (sau khi Worker deploy xong), hoặc custom domain API.
-   - `VITE_SITE_URL` = URL Pages (vd. `https://<pages>.pages.dev`).
-   - `GEMINI_API_KEY` nếu build cần (theo [`vite.config.ts`](moi-thue---real-estate-platform/vite.config.ts)).
+   - **Deploy command**: nếu Dashboard **bắt buộc** có giá trị, dùng **chính xác** một trong hai (không deploy Worker):
+     - `npm run cf:pages-static-only` — script trong [`package.json`](moi-thue---real-estate-platform/package.json) chỉ là `exit 0` (tránh `node -e "..."` bị shell Cloudflare parse sai dấu `(`).
+     - `true` — lệnh shell no-op.
+     - **Không** dán nguyên nội dung `node -e ...` vào ô Deploy command (dễ lỗi `Syntax error: "(" unexpected`).
 
-SPA fallback: file [`moi-thue---real-estate-platform/public/_redirects`](moi-thue---real-estate-platform/public/_redirects) (`/*` → `/index.html` 200) để React Router hoạt động trên Pages.
+   **Environment variables** (Production / Preview):
 
-Sau khi đổi URL Worker: cập nhật lại `VITE_API_BASE` trên Pages và **Redeploy** (biến `VITE_*` được embed lúc build).
+   | Biến | Mục đích |
+   |------|-----------|
+   | `VITE_API_BASE` | URL Worker public + `/api/v1`, vd. `https://moithue-base.<account>.workers.dev/api/v1` (lấy sau khi Actions deploy xong lần đầu). |
+   | `VITE_SITE_URL` | URL Pages, vd. `https://<project>.pages.dev`. |
+   | `GEMINI_API_KEY` | Chỉ nếu build cần ([`vite.config.ts`](moi-thue---real-estate-platform/vite.config.ts)). |
+
+   **Không** thêm `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` trên Pages khi dùng Cách A (chúng chỉ dùng trong GitHub Secrets cho Worker).
+
+3. **Cách B (tuỳ chọn)** — deploy Worker trong cùng job Pages: **Deploy command** = `npm run cf:deploy-worker` (xem [`package.json`](moi-thue---real-estate-platform/package.json)). Khi đó thêm `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` trên Pages; **nên tắt** workflow GitHub Actions để không deploy Worker hai lần. **Không** dùng `npx wrangler deploy` trực tiếp tại root app (lỗi npm `workspaces`).
+
+SPA fallback: [`moi-thue---real-estate-platform/public/_redirects`](moi-thue---real-estate-platform/public/_redirects) (`/*` → `/index.html` 200).
+
+Sau khi đổi URL Worker: cập nhật `VITE_API_BASE` trên Pages và **Redeploy** (biến `VITE_*` embed lúc build).
 
 ## 4. Kiểm tra (E2E thủ công)
 
@@ -93,3 +111,20 @@ Xảy ra khi Git lưu thư mục dạng **submodule** (mode `160000`, gitlink) n
 1. Xóa `.git` bên trong `moi-thue---real-estate-platform/` và `moithue-base/` (nếu có).
 2. Ở repo gốc: `git rm --cached moi-thue---real-estate-platform moithue-base` rồi `git add moi-thue---real-estate-platform/ moithue-base/` để index là file thường (blob), không còn gitlink.
 3. Commit và push lại — build Pages sẽ clone bình thường.
+
+## 7. Sự cố: *The build token selected for this build has been deleted or rolled* (Worker Builds)
+
+Thông báo này đến từ **Cloudflare Worker Builds** (Workers → project `moithue-base` → tích hợp Git để Cloudflare tự clone repo và build/deploy). Cloudflare dùng một **Git build token** (thường là GitHub App / PAT) để đọc repo; token đó đã **bị xóa, hết hạn hoặc bị rotate** nên build không chạy được.
+
+**Cách xử lý (trên Cloudflare Dashboard):**
+
+1. Vào **Workers & Pages** → chọn Worker **`moithue-base`** (hoặc đúng tên project Worker Builds của bạn).
+2. Mở **Settings** (hoặc **Builds** / **Git repository** — tùy giao diện hiện tại).
+3. Phần liên kết **GitHub / Git**:
+   - **Disconnect** repository (nếu có), rồi **Connect repository** lại và cấp quyền mới cho Cloudflare; **hoặc**
+   - Dùng mục **Update credentials** / **Reconnect** / **Regenerate token** nếu Dashboard hiển thị.
+4. Lưu → **Retry deployment** / push commit mới để chạy build lại.
+
+**Không liên quan** tới `CLOUDFLARE_API_TOKEN` trong GitHub Actions hay biến môi trường Pages — đó là token API Cloudflare khác. Build token chỉ dùng cho luồng **Worker Builds nối Git**.
+
+**Nếu bạn không cần Worker Builds** (đã deploy bằng [GitHub Actions](.github/workflows/deploy-moithue-base.yml) hoặc `npm run cf:deploy-worker` trên Pages): có thể **gỡ liên kết Git** khỏi Worker Builds để tránh build tự động trùng và lỗi token; chỉ giữ một pipeline deploy.

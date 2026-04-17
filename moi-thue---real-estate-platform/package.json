@@ -17,7 +17,9 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server/dist",
     "lint": "tsc --noEmit",
-    "start:api": "npm run start:prod -w moi-thue-api"
+    "start:api": "npm run start:prod -w moi-thue-api",
+    "cf:deploy-worker": "cd ../moithue-base && npm ci && npx wrangler d1 migrations apply DB_PROD --remote && npx wrangler deploy",
+    "cf:pages-static-only": "exit 0"
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
