@@ -1,0 +1,8 @@
+# Sao chép thành `.dev.vars` (không commit). Wrangler đọc file này khi `wrangler dev`.
+# Production: `wrangler secret put JWT_SECRET` (và các secret khác) trên Cloudflare Dashboard.
+
+JWT_SECRET=local-dev-only-change-me-min-32-characters-long!
+
+# Tuỳ chọn — CORS & SPA (dev)
+# ALLOW_ORIGIN=http://localhost:3000
+# PASSWORD_RESET_APP_URL=http://localhost:3000

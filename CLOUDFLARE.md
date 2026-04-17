@@ -22,7 +22,7 @@ Monorepo gồm API Worker [`moithue-base/`](moithue-base/) và SPA Vite [`moi-th
 
 ### Secrets & biến (Dashboard → Workers → moithue-base → Settings)
 
-- **Secret** (bắt buộc): `JWT_SECRET` — tạo bằng `wrangler secret put JWT_SECRET` hoặc UI (chuỗi dài, ngẫu nhiên).
+- **Secret** (bắt buộc): `JWT_SECRET` — từ thư mục `moithue-base`: `npx wrangler secret put JWT_SECRET` (hoặc Dashboard → Secrets).
 - **Vars** (khuyến nghị production):
   - `ALLOW_ORIGIN` = origin chính xác của SPA, ví dụ `https://<project>.pages.dev` (CORS).
   - `PASSWORD_RESET_APP_URL` = URL SPA (bỏ nếu production chỉ gửi email reset).
@@ -39,6 +39,8 @@ Giá trị `JWT_ISSUER`, `ACCESS_TOKEN_TTL_SEC`, `REFRESH_TOKEN_DAYS` có thể 
    npm run db:migrations:apply:remote
    ```
 
+   Wrangler chỉ là dependency local của project: nếu gõ `wrangler` mà báo `command not found`, hãy **luôn** chạy trong `moithue-base` như trên, hoặc tương đương `npx wrangler d1 migrations apply DB_PROD --remote` (sau `npm ci`).
+
 ### Deploy tự động (GitHub Actions)
 
 Workflow: [`.github/workflows/deploy-moithue-base.yml`](.github/workflows/deploy-moithue-base.yml).
@@ -50,7 +52,7 @@ Trên GitHub: **Settings → Secrets and variables → Actions**, thêm:
 | `CLOUDFLARE_API_TOKEN` | API Token với quyền **Edit Cloudflare Workers** và **D1** (để `migrations apply` + `deploy`). |
 | `CLOUDFLARE_ACCOUNT_ID` | Account ID (Overview Dashboard). |
 
-Mỗi push lên `main` có thay đổi trong `moithue-base/` sẽ: `npm ci` → `tsc` → `wrangler d1 migrations apply --remote` → `wrangler deploy`.
+Mỗi push lên `main` có thay đổi trong `moithue-base/` sẽ: `npm ci` → `tsc` → `npx wrangler d1 migrations apply DB_PROD --remote` → `npx wrangler deploy` (CI đã cấu hình sẵn).
 
 ## 3. Cloudflare Pages (SPA)
 

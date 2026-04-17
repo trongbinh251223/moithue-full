@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "moithue-base",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB_PROD",
+      "database_name": "moithue_base",
+      "database_id": "acca0aa5-7dd8-44e8-8d20-b81447851120",
+      "preview_database_id": "6f661ef7-c6aa-4d6d-a5cc-3d86e102e093",
+      "migrations_dir": "./src/db/migrations/production"
+    }
+  ],
+  "vars": {
+    "JWT_ISSUER": "moithue-base",
+    "ACCESS_TOKEN_TTL_SEC": "900",
+    "REFRESH_TOKEN_DAYS": "7"
+  }
+}

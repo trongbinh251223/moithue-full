@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1739627475187,
+      "tag": "0000_romantic_malice",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1739628187766,
+      "tag": "0001_polite_romulus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776339193777,
+      "tag": "0002_rainy_skrulls",
+      "breakpoints": true
+    }
+  ]
+}

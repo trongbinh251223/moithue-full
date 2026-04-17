@@ -1,0 +1,66 @@
+{
+  "name": "moithue-base",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.10.0"
+  },
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "test": "vitest",
+    "check": "tsc --noEmit && npm run generate:seed",
+    "cf-typegen": "wrangler types",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:studio:local": "drizzle-kit studio --config=drizzle.config.local.ts",
+    "db:studio:local:rebuild": "npm rebuild better-sqlite3",
+    "generate:seed": "tsx src/db/seed-generator.ts",
+    "db:seed:preview": "wrangler d1 execute DB_PROD --remote --preview --file=./src/db/migrations/seed.sql",
+    "db:seed:local": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/seed.sql",
+    "db:local:apply-0000": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0000_thankful_freak.sql",
+    "db:local:apply-0001": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0001_auth_roles_sessions.sql",
+    "db:local:apply-0002": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0002_password_reset_tokens.sql",
+    "db:local:apply-0003": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0003_properties_blog_user_phone.sql",
+    "db:local:apply-0004": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0004_saved_properties.sql",
+    "db:local:apply-0005": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0005_user_avatar_address.sql",
+    "db:local:apply-0006": "wrangler d1 execute DB_PROD --local --file=./src/db/migrations/production/0006_contact_site_settings.sql",
+    "db:local:apply-all": "npm run db:local:apply-0000 && npm run db:local:apply-0001 && npm run db:local:apply-0002 && npm run db:local:apply-0003 && npm run db:local:apply-0004 && npm run db:local:apply-0005 && npm run db:local:apply-0006",
+    "db:local:reset": "rm -rf .wrangler/state/v3/d1 && npm run db:local:apply-all && npm run db:seed:local",
+    "db:local:migrations-apply": "wrangler d1 migrations apply DB_PROD --local",
+    "db:migrations:apply:remote": "wrangler d1 migrations apply DB_PROD --remote",
+    "db:preview:align-auth": "wrangler d1 execute DB_PROD --remote --preview --file=./scripts/d1-preview-align-auth-schema.sql",
+    "db:local:align-auth": "wrangler d1 execute DB_PROD --local --file=./scripts/d1-preview-align-auth-schema.sql",
+    "db:preview:add-role-id": "wrangler d1 execute DB_PROD --remote --preview --file=./scripts/d1-preview-add-role-id.sql",
+    "db:local:add-role-id": "wrangler d1 execute DB_PROD --local --file=./scripts/d1-preview-add-role-id.sql",
+    "db:preview:add-password-hash": "wrangler d1 execute DB_PROD --remote --preview --file=./scripts/d1-preview-add-password-hash.sql",
+    "db:local:add-password-hash": "wrangler d1 execute DB_PROD --local --file=./scripts/d1-preview-add-password-hash.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.14.7",
+    "@types/node": "^25.6.0",
+    "@vitest/runner": "^4.1.4",
+    "@vitest/snapshot": "^4.1.4",
+    "better-sqlite3": "^11.10.0",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.21.0",
+    "typescript": "^5.5.2",
+    "vitest": "^4.1.4",
+    "wrangler": "^4.83.0"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.6",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.14",
+    "jose": "^6.2.2",
+    "zod": "^4.3.6"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "^0.25.4"
+    }
+  }
+}
